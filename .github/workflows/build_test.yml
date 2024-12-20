@@ -119,8 +119,9 @@ jobs:
             ${{ matrix.job.goos}}-${{ matrix.job.platform }}.${{matrix.job.file_ext}}
             
       - name: Generate Changelog
-        run: |
-          npx changelogithub --token ${{ secrets.GITHUB_TOKEN }} > CHANGELOG.md
+        run: npx changelogithub --output CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
