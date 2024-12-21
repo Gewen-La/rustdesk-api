@@ -55,6 +55,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go environment
         uses: actions/setup-go@v4
@@ -121,13 +123,16 @@ jobs:
           name: rustdesk-api-${{ matrix.job.goos }}-${{ matrix.job.platform }}
           path: |
             ${{ matrix.job.goos}}-${{ matrix.job.platform }}.${{matrix.job.file_ext}}
-
-
-          
+            
+      - name: Changelog
+      - run: npx changelogithub --output CHANGELOG.md # or changelogithub@0.12 if ensure the stable result
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
           
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          body_path: CHANGELOG.md
           files: |
             ${{ matrix.job.goos}}-${{ matrix.job.platform }}.${{matrix.job.file_ext}}
         env:
