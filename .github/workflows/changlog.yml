@@ -19,6 +19,8 @@ jobs:
         run: git tag -d beta
         continue-on-error: true
 
-      - run: npx changelogithub --output CHANGELOG.md # or changelogithub@0.12 if ensure the stable result
+      - run: |
+          npx changelogithub --output CHANGELOG.md # or changelogithub@0.12 if ensure the stable result
+          echo CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
