@@ -173,11 +173,9 @@ jobs:
         run: |
           mkdir -p ${{ matrix.job.platform }}
           tar -xzf ${{ matrix.job.goos }}-${{ matrix.job.platform }}.tar.gz -C ${{ matrix.job.platform }}
-          ls -l ${{ matrix.job.platform }}
       - name: Build package for ${{ matrix.job.platform }} arch
         run: |
-           ls -l ${{ matrix.job.platform }}
-           mv ${{ matrix.job.platform }}/apimain debian-build/${{ matrix.job.platform }}/bin/rustdesk-api 
+           mv ${{ matrix.job.platform }}/release/apimain debian-build/${{ matrix.job.platform }}/bin/rustdesk-api 
            chmod -v a+x debian-build/${{ matrix.job.platform }}/bin/*
            mkdir -p data
            cp -vr debian systemd conf data resources runtime debian-build/${{ matrix.job.platform }}/
