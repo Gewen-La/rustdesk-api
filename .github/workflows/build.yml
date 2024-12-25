@@ -161,6 +161,21 @@ jobs:
           sudo apt update
           DEBIAN_FRONTEND=noninteractive sudo apt install -y devscripts build-essential debhelper pkg-config ${{ matrix.job.crossbuild_package }}
           mkdir -p debian-build/${{ matrix.job.platform }}/bin
+      - name: Get tag version
+        id: get_tag
+        run: |
+          # 提取 tag 并去掉前缀 v
+          TAG_VERSION="${GITHUB_REF##*/}"
+          VERSION="${TAG_VERSION#v}" # 去掉前面的 v
+          echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Update changelog
+        run: |
+          # 格式化时间
+          DATE=$(date -R)
+          # 插入到 changelog 文件的开头
+          sed -i "1i rustdesk-api-server (${VERSION}) stable; urgency=medium\n\n  * Automatically generated release for version ${VERSION}.\n\n -- GitHub Actions <actions@github.com>  ${DATE}\n" debian/changelog
 
       - name: Download binaries
         uses: actions/download-artifact@v4
