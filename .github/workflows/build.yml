@@ -170,6 +170,7 @@ jobs:
 
       - name: Build package for ${{ matrix.job.platform }} arch
         run: |
+           mkdir -p ${{ matrix.job.platform }}
            tar -xzf ${{ matrix.job.goos }}-${{ matrix.job.platform }}.tar.gz -C ${{ matrix.job.platform }}
            mv ${{ matrix.job.platform }}/apimain debian-build/${{ matrix.job.platform }}/bin/rustdesk-api 
            mv release/apimain debian-build/${{ matrix.job.platform }}/bin/rustdesk-api 
