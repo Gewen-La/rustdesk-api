@@ -123,9 +123,7 @@ jobs:
           name: rustdesk-api-${{ matrix.job.goos }}-${{ matrix.job.platform }}
           path: |
             ${{ matrix.job.goos}}-${{ matrix.job.platform }}.${{matrix.job.file_ext}}
-            
 
-          
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -134,10 +132,67 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Changelog
+      - name: Generate Changelog
         run: npx changelogithub # or changelogithub@0.12 if ensure the stable result
         env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}          
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+  deb-package:
+    name: debian package - ${{ matrix.job.platform }}
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        job:
+          - { platform: "amd64", goos: "linux", debian_platform: "amd64", crossbuild_package: ""}
+          - { platform: "arm64", goos: "linux", debian_platform: "arm64", crossbuild_package: "crossbuild-essential-arm64" }
+          - { platform: "armv7l", goos: "linux", debian_platform: "armhf", crossbuild_package: "crossbuild-essential-armhf" }
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Create packaging env
+        run: |
+          sudo apt update
+          DEBIAN_FRONTEND=noninteractive sudo apt install -y devscripts build-essential debhelper pkg-config ${{ matrix.job.crossbuild_package }}
+          mkdir -p debian-build/${{ matrix.job.platform }}/bin
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.job.goos }}-${{ matrix.job.platform }}.tar.gz
+          path: .
+
+      - name: Build package for ${{ matrix.job.platform }} arch
+        run: |
+           tar -xzf ${{ matrix.job.goos }}-${{ matrix.job.platform }}.tar.gz
+           mv release/apimain debian-build/${{ matrix.job.platform }}/bin/rustdesk-api 
+           chmod -v a+x debian-build/${{ matrix.job.platform }}/bin/*
+           mkdir -p data
+           cp -vr debian systemd conf data resources runtime debian-build/${{ matrix.job.platform }}/
+           cat debian/control.tpl | sed 's/{{ ARCH }}/${{ matrix.job.debian_platform }}/' > debian-build/${{ matrix.job.platform }}/debian/control
+           cd debian-build/${{ matrix.job.platform }}/
+           debuild -i -us -uc -b -a${{ matrix.job.debian_platform}}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-api-${{ matrix.job.debian_platform }}
+          path: |
+            debian-build/*.deb
+
+      - name: Create Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: |
+            debian-build/rustdesk-api-server_*_${{ matrix.job.debian_platform }}.deb
 
   docker:
     name: Push Docker Image
