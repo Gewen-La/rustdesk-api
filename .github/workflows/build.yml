@@ -57,6 +57,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: lejianwen/rustdesk-api-web
+          path: rustdesk-api-web
+          ref: master
 
       - name: Set up Go environment
         uses: actions/setup-go@v4
@@ -68,14 +73,12 @@ jobs:
         with:
           node-version: '20'
 
-
       - name: build rustdesk-api-web
+        working-directory: rustdesk-api-web
         run: |
-          git clone ${{ env.WEBCLIENT_SOURCE_LOCATION }}
-          cd rustdesk-api-web
           npm install
           npm run build
-          mkdir ../resources/admin/ -p
+          mkdir -p ../resources/admin/
           cp -ar dist/* ../resources/admin/
 
       - name: tidy
@@ -273,7 +276,6 @@ jobs:
         run: |
           mkdir -p ${{ matrix.job.platform }}
           tar -xzf ${{ matrix.job.goos }}-${{ matrix.job.platform }}.tar.gz -C ${{ matrix.job.platform }}
-          file ${{ matrix.job.platform }}/apimain
 
       - name: Build and push Docker image to Docker Hub ${{ matrix.job.platform }}
         if: ${{ env.SKIP_DOCKER_HUB == 'false' }}  # Only run this step if SKIP_DOCKER_HUB is false
